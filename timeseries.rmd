@@ -1,0 +1,143 @@
+---
+title: "Time series analysis BASIC"
+author: "Suhail AK"
+date: "20 April 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Time series analysis on airpassenger data set
+
+
+```{r}
+library(MASS)
+library(tseries)
+library(stats)
+frequency(air)
+air <- AirPassengers 
+class(air)
+start(air)
+end(air)
+time(air)
+View(AirPassengers)
+
+plot(air)
+abline(reg=lm(air ~time(air)))
+```
+
+
+```{r}
+
+stlval <- stl(air,s.window = "periodic")
+plot(stlval)
+```
+
+
+```{r}
+#to plot trendline
+plot(aggregate(air,FUN = mean))
+class(air)
+```
+
+```{r}
+#for seasonality check use boxplot
+boxplot(air~cycle(air))
+
+```
+
+
+```{r}
+#now to make varience equal we use log function
+
+station <- plot(diff(log(air)))
+
+stationair <- diff(log(air))
+
+#now to check if the data is Stationary or not (use adf testing)
+adf.test(stationair,alternative = "stationary")
+
+
+```
+
+Once the data is stationary then apply time series model
+like eg: ARIMA model
+- ARIMA Model
+AR I MA
+AR- auto regression (p-value coeffecient)
+I- integration (d value)
+MA- moving average (q value)
+
+to find q value using autocorrelation function
+
+ie find the line before the inverted line index
+ in this case from the graph the value of q is 1
+
+```{r}
+#using autocorrelation function to predict q value
+acf(stationair)
+
+```
+
+similarly to find P coeffecient using partial autocorrealtion function
+ie. from the graph the value of P coeffecient is 0 
+
+
+also to find coeffecient d we have to check how many times we used differentiation(diff()) to make mean constant.
+hence in this case we differentiated once hence d=1
+
+```{r}
+pacf(stationair)
+```
+
+Now applying ARIMA model
+ie c(p,d,q) in this case (0,1,1)
+in predict function fit is a model and n.ahead =(no of years)*frequency/period
+and in pred1 converting the values from log to decimal form using e^
+
+```{r}
+fit <- arima(log(air),c(0,1,1),list(order=c(0,1,1),period=12))
+pred <- predict(fit,n.ahead = 10*12)
+
+pred1 <- 2.718^pred$pred
+
+ts.plot(air,pred1,log="y",lty=c(1,3))
+
+```
+
+Now to test the model for the year 1960
+
+```{r}
+
+air1=ts(air,frequency = 12,start = c(1949,1),end = c(1959,12))
+air1
+fit1 <- arima(log(air1),c(0,1,1),seasonal=list(order=c(0,1,1),period=12))
+pred2 <- predict(fit1,n.ahead=10*12)
+pred2deci <- 2.718^pred2$pred
+data1 <- head(pred2deci,12)
+data1
+pred_data1960 <- round(data1,0)
+actual_data1960 <- tail(air,12)
+df <- data.frame(pred_data1960,actual_data1960)
+df
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
